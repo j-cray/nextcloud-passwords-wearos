@@ -1,10 +1,16 @@
 
 package com.example.nextcloud_passwords_wearos.ui.login
 
+import android.app.Activity
+import android.app.RemoteInput
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.TextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,7 +24,10 @@ import androidx.wear.compose.foundation.lazy.AutoCenteringParams
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import org.koin.androidx.compose.koinViewModel
 
@@ -46,33 +55,31 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
         when (uiState) {
             is LoginUiState.Idle -> {
                 item {
-                    TextField(
+                    WearInputChip(
+                        label = "Server URL",
                         value = serverUrl,
-                        onValueChange = { serverUrl = it },
-                        label = { Text("Server URL") },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        onValueChange = { serverUrl = it }
                     )
                 }
                 item {
-                    TextField(
+                    WearInputChip(
+                        label = "Username",
                         value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username") },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        onValueChange = { username = it }
                     )
                 }
                 item {
-                    TextField(
+                    WearInputChip(
+                        label = "Password",
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        isPassword = true
                     )
                 }
                 item {
                     Button(
                         onClick = { viewModel.login(serverUrl, username, password) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     ) {
                         Text("Login")
                     }
@@ -107,7 +114,7 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                 item {
                     Text(
                         text = "Error: ${(uiState as LoginUiState.Error).message}",
-                        color = androidx.wear.compose.material.MaterialTheme.colors.error
+                        color = MaterialTheme.colors.error
                     )
                 }
                 item {
@@ -121,4 +128,53 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
             }
         }
     }
+}
+
+@Composable
+fun WearInputChip(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    isPassword: Boolean = false
+) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val results = RemoteInput.getResultsFromIntent(result.data)
+            val text = results?.getCharSequence("input_result")?.toString()
+            if (text != null) {
+                onValueChange(text)
+            }
+        }
+    }
+
+    Chip(
+        label = { Text(label) },
+        secondaryLabel = { 
+            Text(
+                if (value.isEmpty()) "Tap to enter" 
+                else if (isPassword) "•".repeat(value.length) 
+                else value
+            ) 
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit"
+            )
+        },
+        onClick = {
+            // Use the standard action for Wear OS input
+            val intent = Intent("android.support.wearable.input.action.REMOTE_INPUT")
+            val remoteInputs = listOf(
+                RemoteInput.Builder("input_result")
+                    .setLabel(label)
+                    .build()
+            )
+            intent.putExtra("android.support.wearable.input.extra.REMOTE_INPUTS", remoteInputs.toTypedArray())
+            launcher.launch(intent)
+        },
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+    )
 }
