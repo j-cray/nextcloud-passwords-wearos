@@ -5,6 +5,7 @@ import com.example.nextcloud_passwords_wearos.data.local.TokenManager
 import com.example.nextcloud_passwords_wearos.data.remote.NextcloudApi
 import com.example.nextcloud_passwords_wearos.data.repository.PasswordRepository
 import com.example.nextcloud_passwords_wearos.ui.login.LoginViewModel
+import com.google.android.gms.wearable.Wearable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
@@ -38,7 +39,11 @@ val appModule = module {
     single {
         PasswordRepository(get(), get())
     }
+    
+    single { Wearable.getMessageClient(androidContext()) }
+    single { Wearable.getNodeClient(androidContext()) }
+    
     viewModel {
-        LoginViewModel(get())
+        LoginViewModel(get(), get(), get())
     }
 }

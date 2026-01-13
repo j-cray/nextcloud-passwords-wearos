@@ -86,5 +86,8 @@ dependencies {
     
     // Security
     implementation("androidx.security:security-crypto:1.0.0")
+    
+    // Wearable Data Layer
+    implementation("com.google.android.gms:play-services-wearable:19.0.0")
 
 }
