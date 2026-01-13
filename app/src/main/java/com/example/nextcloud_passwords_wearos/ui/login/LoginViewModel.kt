@@ -15,6 +15,12 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState = _uiState.asStateFlow()
 
+    init {
+        if (repository.isLoggedIn()) {
+            _uiState.value = LoginUiState.Success
+        }
+    }
+
     fun login(serverUrl: String, username: String, password: String) {
         viewModelScope.launch {
             _uiState.value = LoginUiState.Loading
@@ -25,5 +31,10 @@ class LoginViewModel(
                 _uiState.value = LoginUiState.Error(e.message ?: "Unknown error")
             }
         }
+    }
+    
+    fun logout() {
+        repository.logout()
+        _uiState.value = LoginUiState.Idle
     }
 }

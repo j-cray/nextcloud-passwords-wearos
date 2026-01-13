@@ -1,17 +1,22 @@
 
 package com.example.nextcloud_passwords_wearos.di
 
+import com.example.nextcloud_passwords_wearos.data.local.TokenManager
 import com.example.nextcloud_passwords_wearos.data.remote.NextcloudApi
 import com.example.nextcloud_passwords_wearos.data.repository.PasswordRepository
 import com.example.nextcloud_passwords_wearos.ui.login.LoginViewModel
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 val appModule = module {
+    single {
+        TokenManager(androidContext())
+    }
     single {
         val logging = HttpLoggingInterceptor()
         logging.setLevel(HttpLoggingInterceptor.Level.BODY)
@@ -21,7 +26,7 @@ val appModule = module {
     }
     single<Retrofit> {
         Retrofit.Builder()
-            .baseUrl("http://localhost/") // This will be replaced by the user's server URL
+            .baseUrl("http://localhost/") // Placeholder, overridden by dynamic URLs
             .client(get())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -30,7 +35,7 @@ val appModule = module {
         get<Retrofit>().create(NextcloudApi::class.java)
     }
     single {
-        PasswordRepository(get())
+        PasswordRepository(get(), get())
     }
     viewModel {
         LoginViewModel(get())
