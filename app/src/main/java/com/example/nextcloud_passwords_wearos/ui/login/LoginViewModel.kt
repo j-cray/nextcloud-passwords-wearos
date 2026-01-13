@@ -33,8 +33,6 @@ class LoginViewModel(
                 _uiState.value = LoginUiState.Success
             } else {
                 _uiState.value = LoginUiState.Idle
-                // Auto-request sync on start if not logged in
-                requestSync()
             }
         }
     }
@@ -44,20 +42,17 @@ class LoginViewModel(
         messageClient.removeListener(this)
     }
 
-    fun requestSync() {
+    fun showQrCode() {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = LoginUiState.Loading
             try {
-                val nodes = Tasks.await(nodeClient.connectedNodes)
-                if (nodes.isEmpty()) {
-                    _uiState.value = LoginUiState.Error("No phone connected")
-                    return@launch
-                }
-                for (node in nodes) {
-                    Tasks.await(messageClient.sendMessage(node.id, "/request-credentials", ByteArray(0)))
-                }
+                val localNode = Tasks.await(nodeClient.localNode)
+                val nodeId = localNode.id
+                // Scheme: nextcloud-passwords://wear-login?nodeId=<nodeId>
+                val qrContent = "nextcloud-passwords://wear-login?nodeId=$nodeId"
+                _uiState.value = LoginUiState.ShowQr(qrContent)
             } catch (e: Exception) {
-                _uiState.value = LoginUiState.Error("Sync failed: ${e.message}")
+                _uiState.value = LoginUiState.Error("Failed to generate QR: ${e.message}")
             }
         }
     }

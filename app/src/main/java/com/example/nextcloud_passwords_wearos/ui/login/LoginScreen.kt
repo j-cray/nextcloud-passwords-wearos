@@ -4,8 +4,10 @@ package com.example.nextcloud_passwords_wearos.ui.login
 import android.app.Activity
 import android.app.RemoteInput
 import android.content.Intent
+import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,10 +16,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
@@ -34,6 +39,9 @@ import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.input.RemoteInputIntentHelper
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
+import com.google.zxing.common.BitMatrix
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -61,15 +69,15 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
             is LoginUiState.Idle -> {
                 if (!showManualLogin) {
                     Text(
-                        text = "Please log in on your phone.",
+                        text = "Scan to Login",
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     Button(
-                        onClick = { viewModel.requestSync() },
+                        onClick = { viewModel.showQrCode() },
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     ) {
-                        Text("Retry Sync")
+                        Text("Show QR Code")
                     }
                     Button(
                         onClick = { showManualLogin = true },
@@ -81,10 +89,26 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                     ManualLoginForm(viewModel)
                 }
             }
+            is LoginUiState.ShowQr -> {
+                val qrContent = (uiState as LoginUiState.ShowQr).qrContent
+                QrCodeImage(content = qrContent)
+                Text(
+                    text = "Scan with phone app",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.caption2,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Button(
+                    onClick = { viewModel.logout() }, // Back to Idle (logout resets state)
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
             is LoginUiState.Loading -> {
                 CircularProgressIndicator()
                 Text(
-                    text = "Syncing...",
+                    text = "Loading...",
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -109,10 +133,10 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                     textAlign = TextAlign.Center
                 )
                 Button(
-                    onClick = { viewModel.requestSync() },
+                    onClick = { viewModel.showQrCode() },
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
-                    Text("Retry Sync")
+                    Text("Retry QR")
                 }
                 Button(
                     onClick = { showManualLogin = true },
@@ -122,6 +146,43 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun QrCodeImage(content: String) {
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(content) {
+        val width = 300
+        val height = 300
+        try {
+            val bitMatrix: BitMatrix = MultiFormatWriter().encode(
+                content,
+                BarcodeFormat.QR_CODE,
+                width,
+                height
+            )
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    bmp.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                }
+            }
+            bitmap = bmp
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    bitmap?.let {
+        Image(
+            bitmap = it.asImageBitmap(),
+            contentDescription = "QR Code",
+            modifier = Modifier
+                .size(150.dp)
+                .clip(RoundedCornerShape(8.dp))
+        )
     }
 }
 

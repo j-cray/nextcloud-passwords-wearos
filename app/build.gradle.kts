@@ -89,5 +89,8 @@ dependencies {
     
     // Wearable Data Layer
     implementation("com.google.android.gms:play-services-wearable:19.0.0")
+    
+    // QR Code
+    implementation("com.google.zxing:core:3.5.1")
 
 }
