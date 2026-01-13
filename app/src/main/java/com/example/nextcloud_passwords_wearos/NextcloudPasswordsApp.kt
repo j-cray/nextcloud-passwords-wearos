@@ -2,7 +2,16 @@
 package com.example.nextcloud_passwords_wearos
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import com.example.nextcloud_passwords_wearos.di.appModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
-@HiltAndroidApp
-class NextcloudPasswordsApp : Application()
+class NextcloudPasswordsApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@NextcloudPasswordsApp)
+            modules(appModule)
+        }
+    }
+}

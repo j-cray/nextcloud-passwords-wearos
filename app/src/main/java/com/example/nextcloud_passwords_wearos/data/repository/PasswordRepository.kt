@@ -3,9 +3,8 @@ package com.example.nextcloud_passwords_wearos.data.repository
 
 import com.example.nextcloud_passwords_wearos.data.remote.NextcloudApi
 import com.example.nextcloud_passwords_wearos.data.remote.LoginRequest
-import javax.inject.Inject
 
-class PasswordRepository @Inject constructor(
+class PasswordRepository(
     private val api: NextcloudApi
 ) {
     suspend fun login(serverUrl: String, username: String, pass: String) {
