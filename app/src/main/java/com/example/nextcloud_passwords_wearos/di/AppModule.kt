@@ -19,7 +19,8 @@ val appModule = module {
     }
     single {
         val logging = HttpLoggingInterceptor()
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+        // Reduce logging level to improve performance on Wear OS
+        logging.setLevel(HttpLoggingInterceptor.Level.BASIC)
         OkHttpClient.Builder()
             .addInterceptor(logging)
             .build()

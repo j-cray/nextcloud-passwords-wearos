@@ -18,25 +18,38 @@ class TokenManager(private val context: Context) {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     }
+    
+    private var cachedToken: String? = null
+    private var cachedServerUrl: String? = null
 
     fun saveToken(token: String) {
+        cachedToken = token
         sharedPreferences.edit().putString("auth_token", token).apply()
     }
 
     fun getToken(): String? {
+        if (cachedToken != null) return cachedToken
+        
         val token = sharedPreferences.getString("auth_token", null)
-        return if (token.isNullOrEmpty()) null else token
+        cachedToken = if (token.isNullOrEmpty()) null else token
+        return cachedToken
     }
     
     fun saveServerUrl(url: String) {
+        cachedServerUrl = url
         sharedPreferences.edit().putString("server_url", url).apply()
     }
     
     fun getServerUrl(): String? {
-        return sharedPreferences.getString("server_url", null)
+        if (cachedServerUrl != null) return cachedServerUrl
+        
+        cachedServerUrl = sharedPreferences.getString("server_url", null)
+        return cachedServerUrl
     }
     
     fun clear() {
+        cachedToken = null
+        cachedServerUrl = null
         sharedPreferences.edit().clear().apply()
     }
 }
