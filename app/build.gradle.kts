@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.nextcloud_passwords_wearos"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         // MUST match the mobile app's applicationId for Data Layer communication
