@@ -7,8 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.example.nextcloud_passwords_wearos.R
 import com.example.nextcloud_passwords_wearos.data.repository.PasswordRepository
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import kotlinx.coroutines.CoroutineScope
@@ -22,9 +24,34 @@ class WearableCredentialService : WearableListenerService(), KoinComponent {
     private val repository: PasswordRepository by inject()
     private val scope = CoroutineScope(Dispatchers.IO)
 
+    override fun onDataChanged(dataEvents: DataEventBuffer) {
+        for (event in dataEvents) {
+            if (event.type == DataEvent.TYPE_CHANGED && event.dataItem.uri.path == "/wear-credentials") {
+                val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                val server = dataMap.getString("server")
+                val user = dataMap.getString("user")
+                val pass = dataMap.getString("password")
+                
+                if (server != null && user != null && pass != null) {
+                    showNotification("Received credentials via Data Layer...")
+                    scope.launch {
+                        try {
+                            repository.login(server, user, pass)
+                            showNotification("Login successful!")
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            showNotification("Login failed: ${e.message}")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     override fun onMessageReceived(messageEvent: MessageEvent) {
+        // Keep message listener as backup
         if (messageEvent.path == "/credentials") {
-            showNotification("Received credentials...")
+            showNotification("Received credentials via Message...")
             
             val data = String(messageEvent.data)
             val parts = data.split("|")
@@ -37,11 +64,6 @@ class WearableCredentialService : WearableListenerService(), KoinComponent {
                     try {
                         repository.login(server, user, pass)
                         showNotification("Login successful!")
-                        
-                        // Notify UI via Broadcast as backup
-                        val intent = Intent("com.example.nextcloud_passwords_wearos.LOGIN_SUCCESS")
-                        intent.setPackage(packageName)
-                        sendBroadcast(intent)
                     } catch (e: Exception) {
                         e.printStackTrace()
                         showNotification("Login failed: ${e.message}")
@@ -61,7 +83,7 @@ class WearableCredentialService : WearableListenerService(), KoinComponent {
         }
         
         val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Use system icon for now
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Nextcloud Passwords")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
