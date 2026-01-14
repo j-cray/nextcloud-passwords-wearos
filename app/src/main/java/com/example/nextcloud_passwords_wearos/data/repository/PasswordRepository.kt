@@ -5,11 +5,16 @@ import android.util.Base64
 import com.example.nextcloud_passwords_wearos.data.local.TokenManager
 import com.example.nextcloud_passwords_wearos.data.model.Password
 import com.example.nextcloud_passwords_wearos.data.remote.NextcloudApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class PasswordRepository(
     private val api: NextcloudApi,
     private val tokenManager: TokenManager
 ) {
+    private val _loginEvent = MutableSharedFlow<Unit>()
+    val loginEvent = _loginEvent.asSharedFlow()
+
     suspend fun login(serverUrl: String, username: String, pass: String) {
         val baseUrl = if (serverUrl.endsWith("/")) serverUrl else "$serverUrl/"
         val listUrl = "${baseUrl}index.php/apps/passwords/api/1.0/password/list"
@@ -24,6 +29,8 @@ class PasswordRepository(
         // If successful (no exception thrown), save credentials
         tokenManager.saveToken(authHeader)
         tokenManager.saveServerUrl(baseUrl)
+        
+        _loginEvent.emit(Unit)
     }
 
     suspend fun getPasswords(): List<Password> {

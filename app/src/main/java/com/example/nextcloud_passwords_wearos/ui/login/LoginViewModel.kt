@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.nextcloud_passwords_wearos.data.repository.PasswordRepository
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.MessageClient
-import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.NodeClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,14 +17,20 @@ class LoginViewModel(
     private val repository: PasswordRepository,
     private val messageClient: MessageClient,
     private val nodeClient: NodeClient
-) : ViewModel(), MessageClient.OnMessageReceivedListener {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
     init {
-        messageClient.addListener(this)
         viewModelScope.launch {
+            // Observe login events from Repository (triggered by WearableCredentialService)
+            launch {
+                repository.loginEvent.collect {
+                    _uiState.value = LoginUiState.Success
+                }
+            }
+            
             val loggedIn = withContext(Dispatchers.IO) {
                 repository.isLoggedIn()
             }
@@ -37,18 +42,12 @@ class LoginViewModel(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        messageClient.removeListener(this)
-    }
-
     fun showQrCode() {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = LoginUiState.Loading
             try {
                 val localNode = Tasks.await(nodeClient.localNode)
                 val nodeId = localNode.id
-                // Scheme: nextcloud-passwords://wear-login?nodeId=<nodeId>
                 val qrContent = "nextcloud-passwords://wear-login?nodeId=$nodeId"
                 _uiState.value = LoginUiState.ShowQr(qrContent)
             } catch (e: Exception) {
@@ -57,15 +56,20 @@ class LoginViewModel(
         }
     }
 
-    override fun onMessageReceived(messageEvent: MessageEvent) {
-        if (messageEvent.path == "/credentials") {
-            val data = String(messageEvent.data)
-            val parts = data.split("|")
-            if (parts.size == 3) {
-                val server = parts[0]
-                val user = parts[1]
-                val pass = parts[2]
-                login(server, user, pass)
+    fun requestSync() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.value = LoginUiState.Loading
+            try {
+                val nodes = Tasks.await(nodeClient.connectedNodes)
+                if (nodes.isEmpty()) {
+                    _uiState.value = LoginUiState.Error("No phone connected")
+                    return@launch
+                }
+                for (node in nodes) {
+                    Tasks.await(messageClient.sendMessage(node.id, "/request-credentials", ByteArray(0)))
+                }
+            } catch (e: Exception) {
+                _uiState.value = LoginUiState.Error("Sync failed: ${e.message}")
             }
         }
     }
