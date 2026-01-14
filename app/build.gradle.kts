@@ -68,6 +68,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.wear.compose:compose-material:1.3.0")
     implementation("androidx.wear.compose:compose-foundation:1.3.0")
+    implementation("androidx.wear.compose:compose-navigation:1.3.0")
     implementation ("androidx.activity:activity-compose:1.8.2")
     implementation ("androidx.wear:wear:1.3.0")
     implementation("androidx.wear:wear-input:1.2.0")
@@ -93,5 +94,8 @@ dependencies {
     
     // QR Code
     implementation("com.google.zxing:core:3.5.4")
+    
+    // Horologist
+    implementation("com.google.android.horologist:horologist-datalayer:0.5.13")
 
 }

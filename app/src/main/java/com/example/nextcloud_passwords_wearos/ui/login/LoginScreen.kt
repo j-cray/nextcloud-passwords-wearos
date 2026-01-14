@@ -45,11 +45,20 @@ import com.google.zxing.common.BitMatrix
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
+fun LoginScreen(
+    viewModel: LoginViewModel = koinViewModel(),
+    onLoginSuccess: () -> Unit = {}
+) {
     val uiState by viewModel.uiState.collectAsState()
     val debugStatus by viewModel.debugStatus.collectAsState()
     val scrollState = rememberScrollState()
     var showManualLogin by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(uiState) {
+        if (uiState is LoginUiState.Success) {
+            onLoginSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -126,18 +135,8 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                 )
             }
             is LoginUiState.Success -> {
+                // Should navigate away, but show text just in case
                 Text("Logged in")
-                Text(
-                    text = "Autofill ready",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-                Button(
-                    onClick = { viewModel.logout() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Logout")
-                }
             }
             is LoginUiState.Error -> {
                 Text(

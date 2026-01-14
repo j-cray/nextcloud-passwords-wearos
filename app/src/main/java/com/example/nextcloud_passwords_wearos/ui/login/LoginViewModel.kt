@@ -80,14 +80,16 @@ class LoginViewModel(
             _uiState.value = LoginUiState.Loading
             try {
                 val dataClient = Wearable.getDataClient(context)
+                // Try to get ALL items to debug
                 val dataItems = Tasks.await(dataClient.getDataItems(
                     android.net.Uri.Builder().scheme("wear").path("/wear-credentials").build()
                 ))
                 
-                _debugStatus.value = "Found ${dataItems.count} items"
+                _debugStatus.value = "Found ${dataItems.count} items. Checking..."
                 
                 var found = false
                 for (item in dataItems) {
+                    _debugStatus.value = "Item: ${item.uri}"
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
                     val server = dataMap.getString("server")
                     val user = dataMap.getString("user")

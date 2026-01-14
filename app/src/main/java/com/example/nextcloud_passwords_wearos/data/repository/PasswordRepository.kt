@@ -14,19 +14,19 @@ class PasswordRepository(
 ) {
     private val _loginEvent = MutableSharedFlow<Unit>()
     val loginEvent = _loginEvent.asSharedFlow()
+    
+    // Simple in-memory cache for details
+    private var cachedPasswords: List<Password> = emptyList()
 
     suspend fun login(serverUrl: String, username: String, pass: String) {
         val baseUrl = if (serverUrl.endsWith("/")) serverUrl else "$serverUrl/"
         val listUrl = "${baseUrl}index.php/apps/passwords/api/1.0/password/list"
         
-        // Create Basic Auth Header
         val credentials = "$username:$pass"
         val authHeader = "Basic " + Base64.encodeToString(credentials.toByteArray(), Base64.NO_WRAP)
         
-        // Verify credentials by making a request
         api.getPasswords(listUrl, authHeader)
         
-        // If successful (no exception thrown), save credentials
         tokenManager.saveToken(authHeader)
         tokenManager.saveServerUrl(baseUrl)
         
@@ -39,9 +39,12 @@ class PasswordRepository(
         val listUrl = "${baseUrl}index.php/apps/passwords/api/1.0/password/list"
         
         val passwords = api.getPasswords(listUrl, authHeader)
-        
-        // Filter out CSE encrypted passwords for now as we don't support decryption
-        return passwords.filter { it.cseType == "none" }
+        cachedPasswords = passwords.filter { it.cseType == "none" }
+        return cachedPasswords
+    }
+    
+    fun getPassword(id: String): Password? {
+        return cachedPasswords.find { it.id == id }
     }
     
     fun isLoggedIn(): Boolean {
@@ -50,5 +53,6 @@ class PasswordRepository(
     
     fun logout() {
         tokenManager.clear()
+        cachedPasswords = emptyList()
     }
 }
