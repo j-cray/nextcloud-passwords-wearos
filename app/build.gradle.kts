@@ -10,7 +10,8 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.nextcloud_passwords_wearos"
+        // MUST match the mobile app's applicationId for Data Layer communication
+        applicationId = "com.hegocre.nextcloudpasswords"
         minSdk = 30
         targetSdk = 34
         versionCode = 1
@@ -91,6 +92,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-wearable:19.0.0")
     
     // QR Code
-    implementation("com.google.zxing:core:3.5.1")
+    implementation("com.google.zxing:core:3.5.4")
 
 }
