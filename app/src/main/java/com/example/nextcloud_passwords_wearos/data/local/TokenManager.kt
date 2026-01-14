@@ -55,6 +55,14 @@ class TokenManager(private val context: Context) {
         sharedPreferences.edit().putString("app_theme", theme).apply()
     }
     
+    fun getSyncMode(): String {
+        return sharedPreferences.getString("sync_mode", "manual") ?: "manual"
+    }
+    
+    fun saveSyncMode(mode: String) {
+        sharedPreferences.edit().putString("sync_mode", mode).apply()
+    }
+    
     fun clear() {
         cachedToken = null
         cachedServerUrl = null

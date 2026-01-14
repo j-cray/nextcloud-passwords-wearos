@@ -1,6 +1,7 @@
 
 package com.example.nextcloud_passwords_wearos.di
 
+import androidx.work.WorkManager
 import com.example.nextcloud_passwords_wearos.data.local.TokenManager
 import com.example.nextcloud_passwords_wearos.data.remote.NextcloudApi
 import com.example.nextcloud_passwords_wearos.data.repository.PasswordRepository
@@ -46,6 +47,7 @@ val appModule = module {
     
     single { Wearable.getMessageClient(androidContext()) }
     single { Wearable.getNodeClient(androidContext()) }
+    single { WorkManager.getInstance(androidContext()) }
     
     viewModel {
         LoginViewModel(get(), get(), get(), androidContext())
@@ -57,7 +59,7 @@ val appModule = module {
         PasswordDetailViewModel(get())
     }
     viewModel {
-        SettingsViewModel(get(), get())
+        SettingsViewModel(get(), get(), get())
     }
     viewModel {
         AddPasswordViewModel(get())

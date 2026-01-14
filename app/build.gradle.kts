@@ -79,6 +79,7 @@ dependencies {
     // Koin
     implementation("io.insert-koin:koin-android:3.5.3")
     implementation("io.insert-koin:koin-androidx-compose:3.5.3")
+    implementation("io.insert-koin:koin-androidx-workmanager:3.5.3")
 
 
     // Retrofit
@@ -96,6 +97,9 @@ dependencies {
     implementation("com.google.zxing:core:3.5.4")
     
     // Horologist
-    implementation("com.google.android.horologist:horologist-datalayer:0.5.13")
+    implementation("com.google.android.horologist:horologist-datalayer:0.7.15")
+    
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
 }

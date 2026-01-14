@@ -25,6 +25,7 @@ fun SettingsScreen(
     onLogout: () -> Unit
 ) {
     val theme by viewModel.theme.collectAsState()
+    val syncMode by viewModel.syncMode.collectAsState()
     val listState = rememberScalingLazyListState()
 
     ScalingLazyColumn(
@@ -73,6 +74,50 @@ fun SettingsScreen(
                 label = { Text("Light") },
                 toggleControl = {
                     if (theme == "light") {
+                        Icon(imageVector = Icons.Default.Check, contentDescription = "Selected")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        
+        item {
+            Text("Sync")
+        }
+        
+        item {
+            ToggleChip(
+                checked = syncMode == "manual",
+                onCheckedChange = { if (it) viewModel.setSyncMode("manual") },
+                label = { Text("Manual Only") },
+                toggleControl = {
+                    if (syncMode == "manual") {
+                        Icon(imageVector = Icons.Default.Check, contentDescription = "Selected")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
+            ToggleChip(
+                checked = syncMode == "on_open",
+                onCheckedChange = { if (it) viewModel.setSyncMode("on_open") },
+                label = { Text("On App Open") },
+                toggleControl = {
+                    if (syncMode == "on_open") {
+                        Icon(imageVector = Icons.Default.Check, contentDescription = "Selected")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
+            ToggleChip(
+                checked = syncMode == "periodic",
+                onCheckedChange = { if (it) viewModel.setSyncMode("periodic") },
+                label = { Text("Periodic (15m)") },
+                toggleControl = {
+                    if (syncMode == "periodic") {
                         Icon(imageVector = Icons.Default.Check, contentDescription = "Selected")
                     }
                 },
