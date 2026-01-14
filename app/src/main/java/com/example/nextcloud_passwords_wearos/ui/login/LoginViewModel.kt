@@ -1,12 +1,15 @@
 
 package com.example.nextcloud_passwords_wearos.ui.login
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nextcloud_passwords_wearos.data.repository.PasswordRepository
 import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.NodeClient
+import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,15 +19,18 @@ import kotlinx.coroutines.withContext
 class LoginViewModel(
     private val repository: PasswordRepository,
     private val messageClient: MessageClient,
-    private val nodeClient: NodeClient
+    private val nodeClient: NodeClient,
+    private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Loading)
     val uiState = _uiState.asStateFlow()
+    
+    private val _debugStatus = MutableStateFlow("Initializing...")
+    val debugStatus = _debugStatus.asStateFlow()
 
     init {
         viewModelScope.launch {
-            // Observe login events from Repository (triggered by WearableCredentialService)
             launch {
                 repository.loginEvent.collect {
                     _uiState.value = LoginUiState.Success
@@ -38,6 +44,19 @@ class LoginViewModel(
                 _uiState.value = LoginUiState.Success
             } else {
                 _uiState.value = LoginUiState.Idle
+                updateConnectionStatus()
+                checkForCredentials()
+            }
+        }
+    }
+    
+    fun updateConnectionStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val nodes = Tasks.await(nodeClient.connectedNodes)
+                _debugStatus.value = "Nodes: ${nodes.size} (${nodes.joinToString { it.displayName }})"
+            } catch (e: Exception) {
+                _debugStatus.value = "Error checking nodes: ${e.message}"
             }
         }
     }
@@ -56,22 +75,48 @@ class LoginViewModel(
         }
     }
 
-    fun requestSync() {
+    fun checkForCredentials() {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = LoginUiState.Loading
             try {
-                val nodes = Tasks.await(nodeClient.connectedNodes)
-                if (nodes.isEmpty()) {
-                    _uiState.value = LoginUiState.Error("No phone connected")
-                    return@launch
+                val dataClient = Wearable.getDataClient(context)
+                val dataItems = Tasks.await(dataClient.getDataItems(
+                    android.net.Uri.Builder().scheme("wear").path("/wear-credentials").build()
+                ))
+                
+                _debugStatus.value = "Found ${dataItems.count} items"
+                
+                var found = false
+                for (item in dataItems) {
+                    val dataMap = DataMapItem.fromDataItem(item).dataMap
+                    val server = dataMap.getString("server")
+                    val user = dataMap.getString("user")
+                    val pass = dataMap.getString("password")
+                    
+                    if (server != null && user != null && pass != null) {
+                        repository.login(server, user, pass)
+                        found = true
+                        break 
+                    }
                 }
-                for (node in nodes) {
-                    Tasks.await(messageClient.sendMessage(node.id, "/request-credentials", ByteArray(0)))
+                
+                if (!found) {
+                    if (_uiState.value is LoginUiState.Loading) {
+                         _uiState.value = LoginUiState.Idle
+                    }
                 }
             } catch (e: Exception) {
-                _uiState.value = LoginUiState.Error("Sync failed: ${e.message}")
+                 _debugStatus.value = "Check failed: ${e.message}"
+                 if (_uiState.value is LoginUiState.Loading) {
+                     _uiState.value = LoginUiState.Idle
+                 }
             }
         }
+    }
+
+    fun requestSync() {
+        checkForCredentials()
+        updateConnectionStatus()
     }
 
     fun login(serverUrl: String, username: String, password: String) {

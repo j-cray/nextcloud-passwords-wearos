@@ -47,6 +47,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
+    val debugStatus by viewModel.debugStatus.collectAsState()
     val scrollState = rememberScrollState()
     var showManualLogin by remember { mutableStateOf(false) }
 
@@ -80,6 +81,12 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                         Text("Show QR Code")
                     }
                     Button(
+                        onClick = { viewModel.requestSync() },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    ) {
+                        Text("Check for Credentials")
+                    }
+                    Button(
                         onClick = { showManualLogin = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -99,7 +106,13 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 Button(
-                    onClick = { viewModel.logout() }, // Back to Idle (logout resets state)
+                    onClick = { viewModel.checkForCredentials() },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Check Status")
+                }
+                Button(
+                    onClick = { viewModel.logout() }, // Back to Idle
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Text("Cancel")
@@ -139,6 +152,12 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                     Text("Retry QR")
                 }
                 Button(
+                    onClick = { viewModel.checkForCredentials() },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Check Status")
+                }
+                Button(
                     onClick = { showManualLogin = true },
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
@@ -146,6 +165,15 @@ fun LoginScreen(viewModel: LoginViewModel = koinViewModel()) {
                 }
             }
         }
+        
+        // Debug Status
+        Text(
+            text = debugStatus,
+            style = MaterialTheme.typography.caption2,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 16.dp)
+        )
     }
 }
 

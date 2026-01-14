@@ -44,6 +44,6 @@ val appModule = module {
     single { Wearable.getNodeClient(androidContext()) }
     
     viewModel {
-        LoginViewModel(get(), get(), get())
+        LoginViewModel(get(), get(), get(), androidContext())
     }
 }
