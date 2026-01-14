@@ -78,22 +78,17 @@ fun LoginScreen(
         when (uiState) {
             is LoginUiState.Idle -> {
                 if (!showManualLogin) {
-                    Text(
-                        text = "Scan to Login",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                    Button(
+                        onClick = { viewModel.goToEnterServer() },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    ) {
+                        Text("Login with Nextcloud")
+                    }
                     Button(
                         onClick = { viewModel.showQrCode() },
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     ) {
-                        Text("Show QR Code")
-                    }
-                    Button(
-                        onClick = { viewModel.requestSync() },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                    ) {
-                        Text("Check for Credentials")
+                        Text("Sync from Phone App")
                     }
                     Button(
                         onClick = { showManualLogin = true },
@@ -105,11 +100,48 @@ fun LoginScreen(
                     ManualLoginForm(viewModel)
                 }
             }
+            is LoginUiState.EnterServer -> {
+                var serverUrl by remember { mutableStateOf("") }
+                Text("Enter Server URL")
+                LightweightInputRow(
+                    label = "Server URL",
+                    value = serverUrl,
+                    onValueChange = { serverUrl = it }
+                )
+                Button(
+                    onClick = { viewModel.startLoginFlow(serverUrl) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                ) {
+                    Text("Next")
+                }
+                Button(
+                    onClick = { viewModel.cancelFlow() },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
+            is LoginUiState.ShowFlowQr -> {
+                val loginUrl = (uiState as LoginUiState.ShowFlowQr).loginUrl
+                QrCodeImage(content = loginUrl)
+                Text(
+                    text = "Scan with Phone",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.caption2,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Button(
+                    onClick = { viewModel.cancelFlow() },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Cancel")
+                }
+            }
             is LoginUiState.ShowQr -> {
                 val qrContent = (uiState as LoginUiState.ShowQr).qrContent
                 QrCodeImage(content = qrContent)
                 Text(
-                    text = "Scan with phone app",
+                    text = "Scan with Phone App",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.caption2,
                     modifier = Modifier.padding(top = 8.dp)
@@ -135,7 +167,6 @@ fun LoginScreen(
                 )
             }
             is LoginUiState.Success -> {
-                // Should navigate away, but show text just in case
                 Text("Logged in")
             }
             is LoginUiState.Error -> {
@@ -145,34 +176,13 @@ fun LoginScreen(
                     textAlign = TextAlign.Center
                 )
                 Button(
-                    onClick = { viewModel.showQrCode() },
+                    onClick = { viewModel.cancelFlow() },
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
-                    Text("Retry QR")
-                }
-                Button(
-                    onClick = { viewModel.checkForCredentials() },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text("Check Status")
-                }
-                Button(
-                    onClick = { showManualLogin = true },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text("Manual Login")
+                    Text("Back")
                 }
             }
         }
-        
-        // Debug Status
-        Text(
-            text = debugStatus,
-            style = MaterialTheme.typography.caption2,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 16.dp)
-        )
     }
 }
 

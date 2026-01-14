@@ -11,8 +11,10 @@ import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.NodeClient
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -74,13 +76,46 @@ class LoginViewModel(
             }
         }
     }
+    
+    fun startLoginFlow(serverUrl: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.value = LoginUiState.Loading
+            try {
+                val response = repository.initLoginFlow(serverUrl)
+                _uiState.value = LoginUiState.ShowFlowQr(
+                    loginUrl = response.login,
+                    pollToken = response.poll.token,
+                    pollEndpoint = response.poll.endpoint
+                )
+                pollLoginFlow(response.poll.endpoint, response.poll.token)
+            } catch (e: Exception) {
+                _uiState.value = LoginUiState.Error("Failed to start login flow: ${e.message}")
+            }
+        }
+    }
+    
+    private fun pollLoginFlow(endpoint: String, token: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            while (isActive && _uiState.value is LoginUiState.ShowFlowQr) {
+                try {
+                    val response = repository.pollLoginFlow(endpoint, token)
+                    // If successful, it returns credentials
+                    repository.login(response.server, response.loginName, response.appPassword)
+                    _uiState.value = LoginUiState.Success
+                    break
+                } catch (e: Exception) {
+                    // 404 means not yet authenticated. Wait and retry.
+                    delay(2000)
+                }
+            }
+        }
+    }
 
     fun checkForCredentials() {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = LoginUiState.Loading
             try {
                 val dataClient = Wearable.getDataClient(context)
-                // Try to get ALL items to debug
                 val dataItems = Tasks.await(dataClient.getDataItems(
                     android.net.Uri.Builder().scheme("wear").path("/wear-credentials").build()
                 ))
@@ -140,5 +175,13 @@ class LoginViewModel(
             repository.logout()
             _uiState.value = LoginUiState.Idle
         }
+    }
+    
+    fun goToEnterServer() {
+        _uiState.value = LoginUiState.EnterServer
+    }
+    
+    fun cancelFlow() {
+        _uiState.value = LoginUiState.Idle
     }
 }

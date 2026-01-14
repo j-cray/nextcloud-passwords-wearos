@@ -3,6 +3,8 @@ package com.example.nextcloud_passwords_wearos.data.repository
 
 import android.util.Base64
 import com.example.nextcloud_passwords_wearos.data.local.TokenManager
+import com.example.nextcloud_passwords_wearos.data.model.LoginFlowInitResponse
+import com.example.nextcloud_passwords_wearos.data.model.LoginFlowPollResponse
 import com.example.nextcloud_passwords_wearos.data.model.Password
 import com.example.nextcloud_passwords_wearos.data.remote.NextcloudApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,7 +17,6 @@ class PasswordRepository(
     private val _loginEvent = MutableSharedFlow<Unit>()
     val loginEvent = _loginEvent.asSharedFlow()
     
-    // Simple in-memory cache for details
     private var cachedPasswords: List<Password> = emptyList()
 
     suspend fun login(serverUrl: String, username: String, pass: String) {
@@ -31,6 +32,16 @@ class PasswordRepository(
         tokenManager.saveServerUrl(baseUrl)
         
         _loginEvent.emit(Unit)
+    }
+    
+    suspend fun initLoginFlow(serverUrl: String): LoginFlowInitResponse {
+        val baseUrl = if (serverUrl.endsWith("/")) serverUrl else "$serverUrl/"
+        val url = "${baseUrl}index.php/login/v2"
+        return api.initLoginFlow(url)
+    }
+    
+    suspend fun pollLoginFlow(endpoint: String, token: String): LoginFlowPollResponse {
+        return api.pollLoginFlow(endpoint, token)
     }
 
     suspend fun getPasswords(): List<Password> {
