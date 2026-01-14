@@ -4,9 +4,11 @@ package com.example.nextcloud_passwords_wearos.di
 import com.example.nextcloud_passwords_wearos.data.local.TokenManager
 import com.example.nextcloud_passwords_wearos.data.remote.NextcloudApi
 import com.example.nextcloud_passwords_wearos.data.repository.PasswordRepository
+import com.example.nextcloud_passwords_wearos.ui.add.AddPasswordViewModel
 import com.example.nextcloud_passwords_wearos.ui.detail.PasswordDetailViewModel
 import com.example.nextcloud_passwords_wearos.ui.list.PasswordListViewModel
 import com.example.nextcloud_passwords_wearos.ui.login.LoginViewModel
+import com.example.nextcloud_passwords_wearos.ui.settings.SettingsViewModel
 import com.google.android.gms.wearable.Wearable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -53,5 +55,11 @@ val appModule = module {
     }
     viewModel {
         PasswordDetailViewModel(get())
+    }
+    viewModel {
+        SettingsViewModel(get(), get())
+    }
+    viewModel {
+        AddPasswordViewModel(get())
     }
 }

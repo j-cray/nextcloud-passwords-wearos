@@ -54,6 +54,14 @@ class PasswordRepository(
         return cachedPasswords
     }
     
+    suspend fun createPassword(password: Password) {
+        val authHeader = tokenManager.getToken() ?: throw IllegalStateException("Not logged in")
+        val baseUrl = tokenManager.getServerUrl() ?: throw IllegalStateException("Server URL not set")
+        val createUrl = "${baseUrl}index.php/apps/passwords/api/1.0/password/create"
+        
+        api.createPassword(createUrl, authHeader, password)
+    }
+    
     fun getPassword(id: String): Password? {
         return cachedPasswords.find { it.id == id }
     }

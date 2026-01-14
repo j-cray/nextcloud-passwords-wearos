@@ -47,6 +47,14 @@ class TokenManager(private val context: Context) {
         return cachedServerUrl
     }
     
+    fun getTheme(): String {
+        return sharedPreferences.getString("app_theme", "system") ?: "system"
+    }
+    
+    fun saveTheme(theme: String) {
+        sharedPreferences.edit().putString("app_theme", theme).apply()
+    }
+    
     fun clear() {
         cachedToken = null
         cachedServerUrl = null

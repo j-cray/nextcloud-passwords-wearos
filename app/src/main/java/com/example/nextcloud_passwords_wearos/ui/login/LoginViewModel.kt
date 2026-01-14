@@ -80,8 +80,10 @@ class LoginViewModel(
     fun startLoginFlow(serverUrl: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = LoginUiState.Loading
+            _debugStatus.value = "Starting login flow..."
             try {
                 val response = repository.initLoginFlow(serverUrl)
+                _debugStatus.value = "Flow started. Polling..."
                 _uiState.value = LoginUiState.ShowFlowQr(
                     loginUrl = response.login,
                     pollToken = response.poll.token,
@@ -90,21 +92,28 @@ class LoginViewModel(
                 pollLoginFlow(response.poll.endpoint, response.poll.token)
             } catch (e: Exception) {
                 _uiState.value = LoginUiState.Error("Failed to start login flow: ${e.message}")
+                _debugStatus.value = "Flow init failed: ${e.message}"
             }
         }
     }
     
     private fun pollLoginFlow(endpoint: String, token: String) {
         viewModelScope.launch(Dispatchers.IO) {
+            var attempts = 0
             while (isActive && _uiState.value is LoginUiState.ShowFlowQr) {
                 try {
+                    attempts++
+                    _debugStatus.value = "Polling... ($attempts)"
                     val response = repository.pollLoginFlow(endpoint, token)
                     // If successful, it returns credentials
+                    _debugStatus.value = "Poll success! Logging in..."
                     repository.login(response.server, response.loginName, response.appPassword)
                     _uiState.value = LoginUiState.Success
                     break
                 } catch (e: Exception) {
                     // 404 means not yet authenticated. Wait and retry.
+                    // Log error only if not 404? Retrofit throws HttpException for 404.
+                    // _debugStatus.value = "Poll retry: ${e.message}"
                     delay(2000)
                 }
             }

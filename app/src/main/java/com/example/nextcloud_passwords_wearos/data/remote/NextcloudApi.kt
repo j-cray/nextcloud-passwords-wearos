@@ -4,6 +4,7 @@ package com.example.nextcloud_passwords_wearos.data.remote
 import com.example.nextcloud_passwords_wearos.data.model.LoginFlowInitResponse
 import com.example.nextcloud_passwords_wearos.data.model.LoginFlowPollResponse
 import com.example.nextcloud_passwords_wearos.data.model.Password
+import retrofit2.http.Body
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -16,6 +17,10 @@ interface NextcloudApi {
     @Headers("OCS-APIRequest: true")
     @GET
     suspend fun getPasswords(@Url url: String, @Header("Authorization") authHeader: String): List<Password>
+    
+    @Headers("OCS-APIRequest: true")
+    @POST
+    suspend fun createPassword(@Url url: String, @Header("Authorization") authHeader: String, @Body password: Password): Password
     
     @POST
     suspend fun initLoginFlow(@Url url: String): LoginFlowInitResponse

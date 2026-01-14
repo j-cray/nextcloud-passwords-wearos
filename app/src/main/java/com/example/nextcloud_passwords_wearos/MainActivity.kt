@@ -8,10 +8,12 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.example.nextcloud_passwords_wearos.ui.add.AddPasswordScreen
 import com.example.nextcloud_passwords_wearos.ui.detail.PasswordDetailScreen
 import com.example.nextcloud_passwords_wearos.ui.list.PasswordListScreen
 import com.example.nextcloud_passwords_wearos.ui.login.LoginScreen
 import com.example.nextcloud_passwords_wearos.ui.login.LoginViewModel
+import com.example.nextcloud_passwords_wearos.ui.settings.SettingsScreen
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
@@ -27,19 +29,6 @@ class MainActivity : ComponentActivity() {
                 ) {
                     composable("login") {
                         val viewModel: LoginViewModel = koinViewModel()
-                        // We need to observe login state here to navigate
-                        // But LoginScreen handles UI.
-                        // Ideally LoginScreen should have a callback onLoginSuccess
-                        
-                        // For now, let's modify LoginScreen to take a callback or observe state here
-                        // But LoginScreen is complex.
-                        
-                        // Let's pass the navController to LoginScreen? No, bad practice.
-                        // Let's observe state here.
-                        
-                        // Actually, LoginScreen is already observing state.
-                        // I'll modify LoginScreen to take onLoginSuccess
-                        
                         LoginScreen(
                             viewModel = viewModel,
                             onLoginSuccess = {
@@ -54,6 +43,12 @@ class MainActivity : ComponentActivity() {
                         PasswordListScreen(
                             onPasswordClick = { password ->
                                 navController.navigate("detail/${password.id}")
+                            },
+                            onAddClick = {
+                                navController.navigate("add")
+                            },
+                            onSettingsClick = {
+                                navController.navigate("settings")
                             }
                         )
                     }
@@ -63,6 +58,24 @@ class MainActivity : ComponentActivity() {
                         if (passwordId != null) {
                             PasswordDetailScreen(passwordId = passwordId)
                         }
+                    }
+                    
+                    composable("add") {
+                        AddPasswordScreen(
+                            onSuccess = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    
+                    composable("settings") {
+                        SettingsScreen(
+                            onLogout = {
+                                navController.navigate("login") {
+                                    popUpTo("list") { inclusive = true }
+                                }
+                            }
+                        )
                     }
                 }
             }
