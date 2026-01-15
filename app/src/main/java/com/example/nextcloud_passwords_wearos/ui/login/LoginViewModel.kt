@@ -109,7 +109,7 @@ class LoginViewModel(
                     _debugStatus.value = "Poll success! Logging in..."
                     try {
                         repository.login(response.server, response.loginName, response.appPassword)
-                        _uiState.value = LoginUiState.Success
+                        // State will be set to Success by loginEvent collector
                         break
                     } catch (loginError: Exception) {
                         // Failed to login with the obtained credentials
