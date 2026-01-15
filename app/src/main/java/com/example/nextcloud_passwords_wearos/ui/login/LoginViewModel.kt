@@ -186,7 +186,7 @@ class LoginViewModel(
                 withContext(Dispatchers.IO) {
                     repository.login(serverUrl, username, password)
                 }
-                _uiState.value = LoginUiState.Success
+                // State will be set to Success by loginEvent collector
             } catch (e: Exception) {
                 _uiState.value = LoginUiState.Error(e.message ?: "Unknown error")
             }
