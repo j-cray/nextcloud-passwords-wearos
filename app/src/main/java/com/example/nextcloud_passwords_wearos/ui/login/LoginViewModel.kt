@@ -113,7 +113,7 @@ class LoginViewModel(
                         break
                     } catch (loginError: Exception) {
                         // Failed to login with the obtained credentials
-                        _uiState.value = LoginUiState.Error("Login failed: ${loginError.message}")
+                        _uiState.value = LoginUiState.Error("Authentication failed with QR code credentials: ${loginError.message}")
                         _debugStatus.value = "Login failed: ${loginError.message}"
                         break
                     }
@@ -153,7 +153,7 @@ class LoginViewModel(
                             break
                         } catch (loginError: Exception) {
                             // Failed to login with credentials from Data Layer
-                            _uiState.value = LoginUiState.Error("Login failed: ${loginError.message}")
+                            _uiState.value = LoginUiState.Error("Authentication failed with synchronized credentials: ${loginError.message}")
                             _debugStatus.value = "Login from Data Layer failed: ${loginError.message}"
                             return@launch
                         }
