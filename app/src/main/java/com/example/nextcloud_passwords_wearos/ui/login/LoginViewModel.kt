@@ -107,9 +107,16 @@ class LoginViewModel(
                     val response = repository.pollLoginFlow(endpoint, token)
                     // If successful, it returns credentials
                     _debugStatus.value = "Poll success! Logging in..."
-                    repository.login(response.server, response.loginName, response.appPassword)
-                    _uiState.value = LoginUiState.Success
-                    break
+                    try {
+                        repository.login(response.server, response.loginName, response.appPassword)
+                        _uiState.value = LoginUiState.Success
+                        break
+                    } catch (loginError: Exception) {
+                        // Failed to login with the obtained credentials
+                        _uiState.value = LoginUiState.Error("Login failed: ${loginError.message}")
+                        _debugStatus.value = "Login failed: ${loginError.message}"
+                        break
+                    }
                 } catch (e: Exception) {
                     // 404 means not yet authenticated. Wait and retry.
                     // Log error only if not 404? Retrofit throws HttpException for 404.
