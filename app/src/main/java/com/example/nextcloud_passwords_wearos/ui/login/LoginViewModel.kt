@@ -149,6 +149,7 @@ class LoginViewModel(
                     if (server != null && user != null && pass != null) {
                         try {
                             repository.login(server, user, pass)
+                            // State will be set to Success by loginEvent collector
                             found = true
                             break
                         } catch (loginError: Exception) {
