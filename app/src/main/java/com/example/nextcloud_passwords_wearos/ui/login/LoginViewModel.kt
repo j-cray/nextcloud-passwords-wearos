@@ -147,9 +147,16 @@ class LoginViewModel(
                     val pass = dataMap.getString("password")
                     
                     if (server != null && user != null && pass != null) {
-                        repository.login(server, user, pass)
-                        found = true
-                        break 
+                        try {
+                            repository.login(server, user, pass)
+                            found = true
+                            break
+                        } catch (loginError: Exception) {
+                            // Failed to login with credentials from Data Layer
+                            _uiState.value = LoginUiState.Error("Login failed: ${loginError.message}")
+                            _debugStatus.value = "Login from Data Layer failed: ${loginError.message}"
+                            return@launch
+                        }
                     }
                 }
                 
